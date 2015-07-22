@@ -20,6 +20,7 @@
 
 	<extensions defaultExtensionNs="com.intellij">
 		<fileTypeFactory implementation="org.solovyev.idea.rust.RustFileTypeFactory" />
+		<lang.parserDefinition language="rust" implementationClass="org.solovyev.idea.rust.RustParserDefinition"/>
 	</extensions>
 
 	<application-components/>

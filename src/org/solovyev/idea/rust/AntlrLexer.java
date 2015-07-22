@@ -4,22 +4,26 @@ import com.intellij.lang.Language;
 import com.intellij.lexer.Lexer;
 import com.intellij.lexer.LexerPosition;
 import com.intellij.psi.tree.IElementType;
-import com.intellij.util.text.CharSequenceReader;
+import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.UnbufferedCharStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 class AntlrLexer extends Lexer {
 
-	private RustLexer lexer;
+	@NotNull
+	private final RustLexer lexer;
 	private Input input;
+
+	AntlrLexer(@NotNull RustLexer lexer) {
+		this.lexer = lexer;
+	}
 
 	@Override
 	public void start(@NotNull CharSequence buffer, int startOffset, int endOffset, int initialState) {
 		this.input = new Input(buffer, startOffset, endOffset);
-		this.lexer = new RustLexer(new UnbufferedCharStream(new CharSequenceReader(buffer.subSequence(startOffset, endOffset))));
-
+		this.lexer.setInputStream(new ANTLRInputStream(buffer.subSequence(startOffset, endOffset).toString()));
+		this.lexer.nextToken();
 	}
 
 	@Override
@@ -34,7 +38,7 @@ class AntlrLexer extends Lexer {
 		if (token == null) {
 			return null;
 		}
-		return new AntlrTokenType(token.getText(), RustLanguage.INSTANCE);
+		return new AntlrTokenType("Rust", RustLanguage.INSTANCE);
 	}
 
 	@Override

@@ -1,6 +1,6 @@
 <idea-plugin version="2">
-	<id>com.yourcompany.unique.plugin.id</id>
-	<name>Plugin display name here</name>
+	<id>org.solovyev.idea.rust</id>
+	<name>Rusted</name>
 	<version>1.0</version>
 	<vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
 
@@ -20,13 +20,13 @@
 
 	<extensions defaultExtensionNs="com.intellij">
 		<fileTypeFactory implementation="org.solovyev.idea.rust.RustFileTypeFactory" />
-		<lang.parserDefinition language="rust" implementationClass="org.solovyev.idea.rust.RustParserDefinition"/>
+		<lang.parserDefinition language="rust" implementationClass="org.solovyev.idea.rust.RustParserDefinition" />
 	</extensions>
 
-	<application-components/>
+	<application-components />
 
-	<project-components/>
+	<project-components />
 
-	<actions/>
+	<actions />
 
 </idea-plugin>

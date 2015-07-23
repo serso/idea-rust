@@ -2,43 +2,32 @@ package org.solovyev.idea.rust;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.ParserDefinition;
-import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.PsiParser;
 import com.intellij.lexer.Lexer;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.FileViewProvider;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.TokenType;
-import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.IFileElementType;
 import com.intellij.psi.tree.TokenSet;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.NotNull;
 
 public class RustParserDefinition implements ParserDefinition {
+	public static final TokenSet WHITE_SPACES = TokenSet.create(RustTypes.get(RustLexer.WS));
+	public static final TokenSet COMMENTS = TokenSet.create(RustTypes.get(RustLexer.INNER_DOC_COMMENT), RustTypes.get(RustLexer.OTHER_BLOCK_COMMENT), RustTypes.get(RustLexer.OTHER_LINE_COMMENT), RustTypes.get(RustLexer.OUTER_DOC_COMMENT));
+
 	@NotNull
 	private static final IFileElementType FILE = new IFileElementType(RustLanguage.INSTANCE);
 
 	@NotNull
-	private static final RustLexer LEXER = new RustLexer(null);
-
-	@NotNull
 	@Override
 	public Lexer createLexer(Project project) {
-		return new AntlrLexer(LEXER);
+		return new AntlrLexer(new RustLexer(null));
 	}
 
 	@Override
 	public PsiParser createParser(Project project) {
-		return new PsiParser() {
-			@NotNull
-			@Override
-			public ASTNode parse(IElementType root, PsiBuilder builder) {
-				final RustParser parser = new RustParser(new CommonTokenStream(LEXER));
-				return null;
-			}
-		};
+		return new AntlrParser(new RustParser(null));
 	}
 
 	@Override
@@ -49,13 +38,13 @@ public class RustParserDefinition implements ParserDefinition {
 	@NotNull
 	@Override
 	public TokenSet getWhitespaceTokens() {
-		return TokenSet.create(TokenType.WHITE_SPACE);
+		return WHITE_SPACES;
 	}
 
 	@NotNull
 	@Override
 	public TokenSet getCommentTokens() {
-		return TokenSet.create();
+		return COMMENTS;
 	}
 
 	@NotNull

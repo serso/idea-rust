@@ -1,19 +1,20 @@
 package org.solovyev.idea.rust;
 
-import com.intellij.lang.Language;
-import com.intellij.lexer.Lexer;
-import com.intellij.lexer.LexerPosition;
+import com.intellij.lexer.LexerBase;
 import com.intellij.psi.tree.IElementType;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.Token;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-class AntlrLexer extends Lexer {
+class AntlrLexer extends LexerBase {
 
-	@NotNull
 	private final RustLexer lexer;
+	@Nullable
 	private Input input;
+	@Nullable
+	private IElementType tokenType;
+	private int state;
 
 	AntlrLexer(@NotNull RustLexer lexer) {
 		this.lexer = lexer;
@@ -23,58 +24,80 @@ class AntlrLexer extends Lexer {
 	public void start(@NotNull CharSequence buffer, int startOffset, int endOffset, int initialState) {
 		this.input = new Input(buffer, startOffset, endOffset);
 		this.lexer.setInputStream(new ANTLRInputStream(buffer.subSequence(startOffset, endOffset).toString()));
-		this.lexer.nextToken();
+		this.lexer.setState(initialState);
+		tokenType = null;
+		state = 0;
 	}
 
 	@Override
 	public int getState() {
-		return lexer.getState();
+		checkToken();
+		return state;
+	}
+
+	private void locateToken() {
+		if (tokenType != null) {
+			return;
+		}
+		final Token prevToken = lexer.getToken();
+		if (prevToken != null && prevToken.getType() == RustLexer.EOF) {
+			return;
+		}
+
+		try {
+			state = lexer.getState();
+			final Token token = lexer.nextToken();
+			final int tokenType = token.getType();
+			this.tokenType = tokenType == RustLexer.EOF ? null : RustTypes.get(tokenType);
+		} catch (Error e) {
+			// add lexer class name to the error
+			final Error error = new Error(lexer.getClass().getName() + ": " + e.getMessage());
+			error.setStackTrace(e.getStackTrace());
+			throw error;
+		}
 	}
 
 	@Nullable
 	@Override
 	public IElementType getTokenType() {
-		final Token token = lexer.getToken();
-		if (token == null) {
-			return null;
+		checkToken();
+		return tokenType;
+	}
+
+	private void checkToken() {
+		if (tokenType == null) {
+			locateToken();
 		}
-		return new AntlrTokenType("Rust", RustLanguage.INSTANCE);
 	}
 
 	@Override
 	public int getTokenStart() {
+		checkToken();
 		return lexer.getToken().getStartIndex();
 	}
 
 	@Override
 	public int getTokenEnd() {
+		checkToken();
 		return lexer.getToken().getStopIndex();
 	}
 
 	@Override
 	public void advance() {
-		lexer.nextToken();
-	}
-
-	@NotNull
-	@Override
-	public LexerPosition getCurrentPosition() {
-		return new AntlrLexerPosition(lexer.getCharIndex(), getState());
-	}
-
-	@Override
-	public void restore(@NotNull LexerPosition position) {
-
+		checkToken();
+		tokenType = null;
 	}
 
 	@NotNull
 	@Override
 	public CharSequence getBufferSequence() {
+		assert input != null;
 		return input.buffer;
 	}
 
 	@Override
 	public int getBufferEnd() {
+		assert input != null;
 		return input.end;
 	}
 
@@ -88,38 +111,6 @@ class AntlrLexer extends Lexer {
 			this.buffer = buffer;
 			this.start = start;
 			this.end = end;
-		}
-	}
-
-	private static class AntlrLexerPosition implements LexerPosition {
-
-		private final int offset;
-		private final int state;
-
-		public AntlrLexerPosition(int offset, int state) {
-			this.offset = offset;
-			this.state = state;
-		}
-
-		@Override
-		public int getOffset() {
-			return offset;
-		}
-
-		@Override
-		public int getState() {
-			return state;
-		}
-	}
-
-	private static class AntlrTokenType extends IElementType {
-
-		public AntlrTokenType(@NotNull String debugName, @Nullable Language language) {
-			super(debugName, language);
-		}
-
-		protected AntlrTokenType(@NotNull String debugName, @Nullable Language language, boolean register) {
-			super(debugName, language, register);
 		}
 	}
 }
